@@ -1,0 +1,106 @@
+# Version control
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+docs/
+*.txt
+
+# Development and testing files
+test_*.py
+test_*.sh
+test_*.js
+tests/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node.js (for services that don't need it)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Data directories (mounted as volumes)
+data/
+minio/
+*/data/
+*_data/
+
+# Environment files (passed as build args)
+.env*
+
+# Docker files (avoid recursive copies)
+Dockerfile*
+docker-compose*.yml
+
+# Scripts not needed for runtime
+generate_tokens.py
+init_marts.py
+check_health.py
+ingest_*.sh
+test_system.sh
+
+# Log files
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Coverage reports
+htmlcov/
+coverage/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py

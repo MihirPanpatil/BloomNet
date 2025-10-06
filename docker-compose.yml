@@ -1,0 +1,329 @@
+version: "3.9"
+services:
+
+# Central object store (MinIO)
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9003"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
+    volumes:
+    - ./minio/data:/data
+    ports:
+    - "9002:9000"
+    - "9003:9003"
+    networks:
+    - default
+    - tailscale
+
+# Kernel / NameNodes (3)
+  kernel1:
+    build: ./kernel
+    container_name: kernel1
+    environment:
+      NODE_ID: kernel1
+      PEER_KERNELS: "kernel2:8000,kernel3:8000"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+    ports:
+    - "8001:8000"
+    volumes:
+    - kernel1_data:/app/data
+    networks:
+    - default  # This is correct
+    - tailscale
+    depends_on: 
+    - tailscale
+
+  kernel2:
+    build: ./kernel
+    container_name: kernel2
+    environment:
+      NODE_ID: kernel2
+      PEER_KERNELS: "kernel1:8000,kernel3:8000"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+    ports:
+    - "8002:8000"
+    volumes:
+    - kernel2_data:/app/data
+    networks:
+    - default
+    - tailscale
+    depends_on:
+    - tailscale
+
+  kernel3:
+    build: ./kernel
+    container_name: kernel3
+    environment:
+      NODE_ID: kernel3
+      PEER_KERNELS: "kernel1:8000,kernel2:8000"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+    ports:
+    - "8003:8000"
+    volumes:
+    - kernel3_data:/app/data
+    networks:
+    - default
+    - tailscale
+    depends_on:
+    - tailscale
+
+  # DataMart: PHOTOS (parent + childA + childB)
+  photos-parent:
+    build: ./datanode
+    container_name: photos-parent
+    environment:
+      NODE_ID: photos-parent
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: photos
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${PHOTOS_PARENT_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8101:8000"
+    volumes:
+    - photos_parent_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+  photos-child-a:
+    build: ./datanode
+    container_name: photos-child-a
+    environment:
+      NODE_ID: photos-child-a
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: photos 
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${PHOTOS_CHILD_A_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8102:8000"
+    volumes:
+    - photos_child_a_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+  photos-child-b:
+    build: ./datanode
+    container_name: photos-child-b
+    environment:
+      NODE_ID: photos-child-b
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: photos
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${PHOTOS_CHILD_B_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8103:8000"
+    volumes:
+    - photos_child_b_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+
+# DataMart: RESEARCH
+  research-parent:
+    build: ./datanode
+    container_name: research-parent
+    environment:
+      NODE_ID: research-parent
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: research
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${RESEARCH_PARENT_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8201:8000"
+    volumes:
+    - research_parent_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+  research-child-a:
+    build: ./datanode
+    container_name: research-child-a
+    environment:
+      NODE_ID: research-child-a
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: research
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${RESEARCH_CHILD_A_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8202:8000"
+    volumes:
+    - research_child_a_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+  research-child-b:
+    build: ./datanode
+    container_name: research-child-b
+    environment:
+      NODE_ID: research-child-b
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: research
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${RESEARCH_CHILD_B_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8203:8000"
+    volumes:
+    - research_child_b_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+# DataMart: CLIENTS
+  clients-parent:
+    build: ./datanode
+    container_name: clients-parent
+    environment:
+      NODE_ID: clients-parent
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: clients
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${CLIENTS_PARENT_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8301:8000"
+    volumes:
+    - clients_parent_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+  clients-child-a:
+    build: ./datanode
+    container_name: clients-child-a
+    environment:
+      NODE_ID: clients-child-a
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: clients
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${CLIENTS_CHILD_A_TOKEN}"
+      KERNEL_JWT_SECRET:
+       "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8302:8000"
+    volumes:
+    - clients_child_a_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+  clients-child-b:
+    build: ./datanode
+    container_name: clients-child-b
+    environment:
+      NODE_ID: clients-child-b
+      PARENT_KERNEL: "http://kernel1:8000"
+      MART_ID: clients
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS: "${MINIO_ROOT_USER}"
+      MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      NODE_TOKEN: "${CLIENTS_CHILD_B_TOKEN}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+    ports:
+    - "8303:8000"
+    volumes:
+    - clients_child_b_data:/data
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+
+# Next.js Portal (talks to kernel for presign and notify)
+  portal:
+    build: ./portal
+    container_name: bloom-portal
+    environment:
+      KERNEL_API: "http://kernel1:8000" # Use Tailscale network instead of localhost
+      PORTAL_TOKEN: "${BLOOM_PORTAL_TOKEN}"
+    ports:
+    - "3001:3000"
+    networks:
+    - tailscale
+    depends_on:
+    - tailscale
+
+# Tailscale sidecar for secure networking
+  tailscale:
+    build: ./tailscale
+    container_name: bloom-tailscale
+    environment:
+      TAILSCALE_AUTHKEY: ${TAILSCALE_AUTHKEY:-""}
+    networks:
+    - tailscale
+    volumes:
+    - tailscale_data:/var/lib/tailscale
+    cap_add:
+    - NET_ADMIN
+    - NET_RAW
+    devices:
+    - /dev/net/tun:/dev/net/tun
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  kernel1_data:
+  kernel2_data:
+  kernel3_data:
+  photos_parent_data:
+  photos_child_a_data:
+  photos_child_b_data:
+  research_parent_data:
+  research_child_a_data:
+  research_child_b_data:
+  clients_parent_data:
+  clients_child_a_data:
+  clients_child_b_data:
+  tailscale_data:
+
+networks:
+  tailscale:
+    driver: bridge
