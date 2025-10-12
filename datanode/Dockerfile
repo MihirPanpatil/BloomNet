@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-COPY ../requirements.txt .
+# Copy requirements file first to leverage Docker layer caching
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./app /app

@@ -1,4 +1,4 @@
-version: "3.9"
+# The 'version' tag is obsolete and has been removed.
 services:
 
 # Central object store (MinIO)
@@ -33,9 +33,9 @@ services:
     volumes:
     - kernel1_data:/app/data
     networks:
-    - default  # This is correct
+    - default
     - tailscale
-    depends_on: 
+    depends_on:
     - tailscale
 
   kernel2:
@@ -106,7 +106,7 @@ services:
     environment:
       NODE_ID: photos-child-a
       PARENT_KERNEL: "http://kernel1:8000"
-      MART_ID: photos 
+      MART_ID: photos
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"

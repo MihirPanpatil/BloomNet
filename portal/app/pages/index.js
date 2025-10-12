@@ -1,31 +1,33 @@
-import {useState, useEffect} from 'react'
-import axios from 'axios'
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function Home(){
-    const [registry, setRegistry] = useState(null)
-    const [file, setFile] = useState(null)
-    const [mart, setMart] = useState('photos')
-    const [uploading, setUploading] = useState(false)
-    const [uploadProgress, setUploadProgress] = useState(0)
-    const [systemStatus, setSystemStatus] = useState({})
-    const [uploadHistory, setUploadHistory] = useState([])
-    const [selectedMart, setSelectedMart] = useState(null)
-    
-    useEffect(()=>{
-        loadRegistry()
-        loadSystemStatus()
-        const interval = setInterval(loadSystemStatus, 10000)
-        return () => clearInterval(interval)
-    },[])
+export default function Home() {
+    const [registry, setRegistry] = useState(null);
+    const [file, setFile] = useState(null); // The file to upload is stored here
+    const [mart, setMart] = useState('photos');
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [systemStatus, setSystemStatus] = useState({});
+    const [uploadHistory, setUploadHistory] = useState([]);
+    const [uploadStatusMessage, setUploadStatusMessage] = useState(''); // For user feedback
 
-    async function loadRegistry(){
-        try{
-            const r = await axios.get('/api/registry')
-            setRegistry(r.data)
-        }catch(e){ console.error('Registry load failed:', e) }
+    useEffect(() => {
+        loadRegistry();
+        loadSystemStatus();
+        const interval = setInterval(loadSystemStatus, 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    async function loadRegistry() {
+        try {
+            const r = await axios.get('/api/registry');
+            setRegistry(r.data);
+        } catch (e) {
+            console.error('Registry load failed:', e);
+        }
     }
 
-    async function loadSystemStatus(){
+    async function loadSystemStatus() {
         try{
             const services = [
                 {name: 'Kernel 1', url: 'http://kernel1:8000/health'},
@@ -35,69 +37,87 @@ export default function Home(){
                 {name: 'Research Parent', url: 'http://research-parent:8000/health'},
                 {name: 'Clients Parent', url: 'http://clients-parent:8000/health'},
                 {name: 'MinIO', url: 'http://minio:9000/minio/health/ready', isMinIO: true}
-            ]
-
-            const status = {}
+            ];
+            const status = {};
             for(const service of services) {
                 try{
-                    const response = await axios.get(service.url, {timeout: 5000})
-                    // MinIO returns 200 but no JSON content, so we treat it as healthy
-                    if (service.isMinIO) {
-                        status[service.name] = { status: 'healthy', response: response.status }
-                    } else {
-                        status[service.name] = { status: 'healthy', response: response.status }
-                    }
+                    const response = await axios.get(service.url, {timeout: 5000});
+                    status[service.name] = { status: 'healthy', response: response.status };
                 }catch(e){
-                    console.error(`Health check failed for ${service.name}:`, e.message)
-                    status[service.name] = { status: 'unhealthy', error: e.message }
+                    console.error(`Health check failed for ${service.name}:`, e.message);
+                    status[service.name] = { status: 'unhealthy', error: e.message };
                 }
             }
-            setSystemStatus(status)
-        }catch(e){ console.error('System status load failed:', e) }
+            setSystemStatus(status);
+        }catch(e){ console.error('System status load failed:', e); }
     }
 
     async function upload(e) {
         e.preventDefault();
-        const fileInput = document.getElementById('file-input');
-        const file = fileInput.files[0];
-        if (!file) return;
-    
+        
+        // **THE FIX**: Use the 'file' from the component's state, not from the event 'e'.
+        if (!file) {
+            setUploadStatusMessage('Please select a file first.');
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress(0);
+        setUploadStatusMessage('Getting upload URL...');
+
         try {
-            setUploadStatus('Getting upload URL...');
-            
-            // 1. Get pre-signed URL for upload
+            // 1. Get pre-signed URL from the backend API
             const response = await axios.post('/api/presign', {
                 mart: mart,
                 key: file.name
             });
-            
             const { url } = response.data;
-            setUploadStatus('Uploading...');
-    
-            // 2. Upload using fetch with additional headers
-            const uploadResponse = await fetch(url, {
-                method: 'PUT',
-                body: file,
-                headers: {
-                    'Content-Type': file.type,
-                    'Cache-Control': 'no-cache'
+            setUploadStatusMessage('Uploading...');
+
+            // 2. Upload the file directly to MinIO using XMLHttpRequest for progress
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', url, true);
+            
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    setUploadProgress(Math.round(percentComplete));
                 }
-            });
-    
-            if (uploadResponse.ok) {
-                setUploadStatus('Upload successful!');
-            } else {
-                const errorText = await uploadResponse.text();
-                throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
-            }
+            };
+
+            xhr.onload = async () => {
+                if (xhr.status === 200) {
+                    setUploadStatusMessage('Upload successful! Notifying kernel...');
+                    // 3. Notify the kernel that the upload is complete
+                    await axios.post('/api/notify', {
+                        mart: mart,
+                        key: file.name,
+                    });
+                    setUploadStatusMessage('Done!');
+                    setUploadHistory(prev => [{ fileName: file.name, mart: mart, timestamp: new Date().toISOString(), status: 'success' }, ...prev]);
+                } else {
+                    throw new Error(`Upload to storage failed: ${xhr.statusText}`);
+                }
+                setUploading(false);
+                setFile(null); // Clear the file input after successful upload
+            };
+
+            xhr.onerror = () => {
+                throw new Error('A network error occurred during the upload.');
+            };
+            
+            xhr.send(file);
+
         } catch (error) {
-            console.error('Upload failed:', error);
-            setUploadStatus(`Upload failed: ${error.message}`);
+            console.error('Upload process failed:', error);
+            setUploadStatusMessage(`Error: ${error.message}`);
+            setUploading(false);
+            setUploadHistory(prev => [{ fileName: file.name, mart: mart, timestamp: new Date().toISOString(), status: 'failed' }, ...prev]);
         }
     }
 
-    const healthyCount = Object.values(systemStatus).filter(s => s.status === 'healthy').length
-    const totalServices = Object.keys(systemStatus).length
+    const healthyCount = Object.values(systemStatus).filter(s => s.status === 'healthy').length;
+    const totalServices = Object.keys(systemStatus).length;
 
     return (
         <div style={{
@@ -105,7 +125,6 @@ export default function Home(){
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
         }}>
-            {/* Header */}
             <header style={{
                 background: 'rgba(255,255,255,0.1)',
                 backdropFilter: 'blur(10px)',
@@ -157,7 +176,7 @@ export default function Home(){
                         }}>
                             <h3 style={{margin: '0 0 1rem 0', color: '#374151', display: 'flex', alignItems: 'center'}}>
                                 🗂️ System Registry
-                                <button 
+                                <button
                                     onClick={loadRegistry}
                                     style={{
                                         marginLeft: 'auto',
@@ -174,10 +193,10 @@ export default function Home(){
                                 </button>
                             </h3>
                             <div style={{
-                                maxHeight: '400px', 
-                                overflow: 'auto', 
-                                background: '#1f2937', 
-                                color: '#f9fafb', 
+                                maxHeight: '400px',
+                                overflow: 'auto',
+                                background: '#1f2937',
+                                color: '#f9fafb',
                                 padding: '1rem',
                                 borderRadius: '0.5rem',
                                 fontFamily: 'Monaco, monospace',
@@ -243,14 +262,14 @@ export default function Home(){
                             marginBottom: '2rem'
                         }}>
                             <h3 style={{margin: '0 0 1rem 0', color: '#374151'}}>📤 Upload to Data Mart</h3>
-                            
+
                             <form onSubmit={upload} style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                                 <div>
                                     <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151'}}>
                                         Target Data Mart:
                                     </label>
-                                    <select 
-                                        value={mart} 
+                                    <select
+                                        value={mart}
                                         onChange={e=>setMart(e.target.value)}
                                         style={{
                                             width: '100%',
@@ -266,7 +285,7 @@ export default function Home(){
                                         <option value="clients">👥 Clients</option>
                                     </select>
                                 </div>
-                                
+
                                 <div>
                                     <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151'}}>
                                         File to Upload:
@@ -279,9 +298,9 @@ export default function Home(){
                                         background: file ? '#f0f9ff' : '#f9fafb',
                                         cursor: 'pointer'
                                     }}>
-                                        <input 
-                                            type="file" 
-                                            onChange={e=>setFile(e.target.files[0])} 
+                                        <input
+                                            type="file"
+                                            onChange={e=>setFile(e.target.files[0])}
                                             style={{display: 'none'}}
                                             id="file-input"
                                         />
@@ -302,11 +321,11 @@ export default function Home(){
                                         </label>
                                     </div>
                                 </div>
-                                
+
                                 {uploading && (
                                     <div>
                                         <div style={{marginBottom: '0.5rem', fontSize: '0.9rem', color: '#374151'}}>
-                                            Upload Progress: {uploadProgress}%
+                                            {uploadStatusMessage}
                                         </div>
                                         <div style={{
                                             width: '100%',
@@ -324,9 +343,9 @@ export default function Home(){
                                         </div>
                                     </div>
                                 )}
-                                
-                                <button 
-                                    type="submit" 
+
+                                <button
+                                    type="submit"
                                     disabled={!file || uploading}
                                     style={{
                                         padding: '0.8rem 1.5rem',
@@ -340,11 +359,10 @@ export default function Home(){
                                         transition: 'all 0.2s ease'
                                     }}
                                 >
-                                    {uploading ? '🚀 Uploading...' : '📤 Upload File'}
+                                    {uploading ? `🚀 Uploading... ${uploadProgress}%` : '📤 Upload File'}
                                 </button>
                             </form>
                         </div>
-
                         {/* System Statistics */}
                         <div style={{
                             background: 'white',
@@ -372,5 +390,5 @@ export default function Home(){
                 </div>
             </main>
         </div>
-    )
+    );
 }
