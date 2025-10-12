@@ -58,7 +58,8 @@ export default function Home(){
 
     async function upload(e) {
         e.preventDefault();
-        const file = e.target.files[0];
+        const fileInput = document.getElementById('file-input');
+        const file = fileInput.files[0];
         if (!file) return;
     
         try {
