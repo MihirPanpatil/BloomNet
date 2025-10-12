@@ -65,7 +65,7 @@ export default function Home(){
             setUploadStatus('Getting upload URL...');
             
             // 1. Get pre-signed URL for upload
-            const response = await axios.post('http://kernel1:8000/presign_upload', {
+            const response = await axios.post('/api/presign', {
                 mart: mart,
                 key: file.name
             });
