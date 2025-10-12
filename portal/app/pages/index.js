@@ -28,13 +28,13 @@ export default function Home(){
     async function loadSystemStatus(){
         try{
             const services = [
-                {name: 'Kernel 1', url: 'http://localhost:8001/health'},
-                {name: 'Kernel 2', url: 'http://localhost:8002/health'},
-                {name: 'Kernel 3', url: 'http://localhost:8003/health'},
-                {name: 'Photos Parent', url: 'http://localhost:8101/health'},
-                {name: 'Research Parent', url: 'http://localhost:8201/health'},
-                {name: 'Clients Parent', url: 'http://localhost:8301/health'},
-                {name: 'MinIO', url: 'http://localhost:9000/minio/health/ready', isMinIO: true}
+                {name: 'Kernel 1', url: 'http://kernel1:8000/health'},
+                {name: 'Kernel 2', url: 'http://kernel2:8000/health'},
+                {name: 'Kernel 3', url: 'http://kernel3:8000/health'},
+                {name: 'Photos Parent', url: 'http://photos-parent:8000/health'},
+                {name: 'Research Parent', url: 'http://research-parent:8000/health'},
+                {name: 'Clients Parent', url: 'http://clients-parent:8000/health'},
+                {name: 'MinIO', url: 'http://minio:9000/minio/health/ready', isMinIO: true}
             ]
 
             const status = {}
@@ -65,8 +65,8 @@ export default function Home(){
             setUploadStatus('Getting upload URL...');
             
             // 1. Get pre-signed URL for upload
-            const response = await axios.post('http://localhost:8001/presign_upload', {
-                mart: 'photos',
+            const response = await axios.post('http://kernel1:8000/presign_upload', {
+                mart: mart,
                 key: file.name
             });
             

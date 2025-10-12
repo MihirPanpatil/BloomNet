@@ -4,6 +4,18 @@ import requests
 import time
 from dotenv import load_dotenv
 
+# Check if PyJWT is installed
+try:
+    import jwt
+except ImportError:
+    print("❌ Error: PyJWT library is not installed")
+    print("Please install it using one of the following methods:")
+    print("  pip install PyJWT")
+    print("  pip3 install PyJWT")
+    print("  conda install -c conda-forge pyjwt")
+    print("  # Or add 'PyJWT' to your requirements.txt file")
+    exit(1)
+
 # Load environment variables from .env file
 load_dotenv()
 

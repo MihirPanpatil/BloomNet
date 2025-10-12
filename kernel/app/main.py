@@ -24,7 +24,7 @@ minio_client = Minio(
     secret_key="minioadmin",
     secure=False  # Set to False for HTTP
 )
-MINIO_PUBLIC_URL = "localhost:9000"
+MINIO_PUBLIC_URL = os.environ.get('MINIO_PUBLIC_URL', 'localhost:9000')
 
 
 # registry structure
@@ -36,10 +36,10 @@ else:
 
 app = FastAPI(title="Bloom Kernel")
 
-# Add CORS middleware to allow requests from any origin
+# Add CORS middleware to allow requests from specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace "*" with specific origins
+    allow_origins=["http://localhost:3000"],  # Restrict to portal origin only
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,8 +115,16 @@ async def auth_generate(body: dict):
     """
     Dev helper: POST {"sub":"node:photos-parent","role":"node","exp_seconds":86400}
     Returns: {"token": "..."}
-    CAUTION: remove or protect this in production.
+    CAUTION: Only available when DEV_MODE=true environment variable is set.
     """
+    # Check if DEV_MODE is enabled
+    dev_mode = os.environ.get('DEV_MODE', 'false').lower() == 'true'
+    if not dev_mode:
+        raise HTTPException(
+            status_code=404,
+            detail='Endpoint not found. This endpoint is only available in development mode.'
+        )
+
     sub = body.get('sub')
     role = body.get('role','node')
     exp = int(body.get('exp_seconds', 86400))

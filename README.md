@@ -23,6 +23,8 @@ BloomNet is a distributed storage system inspired by fractal geometry, implement
 - Docker & Docker Compose
 - 8GB+ RAM recommended
 - Linux/macOS/Windows with Docker support
+- Python 3.x (for initialization scripts)
+- PyJWT library: `pip install PyJWT` (required for `init_marts.py`)
 
 ### 1. Clone and Setup
 ```bash
@@ -54,20 +56,22 @@ python3 generate_tokens.py
 docker compose up --build -d
 ```
 
-### 5. Verify Installation
+### 5. Configure MinIO (Optional)
+If you need to customize CORS or bucket policies, use the provided configuration files:
+
 ```bash
-# Check system status
-./test_system.sh
+# Apply CORS configuration (allows cross-origin requests)
+mc admin policy add bloom-net cors-policy /path/to/cors.json
 
-# Check system health with details
-python3 check_health.py --verbose
+# Apply bucket policy (controls access to mart buckets)
+mc admin policy add bloom-net bucket-policy /path/to/bucket-policy.json
 
-# Initialize marts (required on first run)
-python3 init_marts.py
-
-# Ingest sample data
-./ingest_all.sh
+# Attach policies to user (replace 'bloom-user' with your MinIO user)
+mc admin policy attach bloom-net cors-policy --user=bloom-user
+mc admin policy attach bloom-net bucket-policy --user=bloom-user
 ```
+
+The provided configuration files (`cors.json` and `bucket-policy.json`) are templates that can be customized for your specific requirements.
 ### 6. Access the Portal
 - **Portal**: http://localhost:3000
 - **MinIO Console**: http://localhost:9001 (admin/minioadmin)

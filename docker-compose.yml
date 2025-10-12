@@ -4,15 +4,15 @@ services:
 # Central object store (MinIO)
   minio:
     image: minio/minio:latest
-    command: server /data --console-address ":9003"
+    command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
       MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
     volumes:
     - ./minio/data:/data
     ports:
-    - "9002:9000"
-    - "9003:9003"
+    - "9000:9000"
+    - "9001:9001"
     networks:
     - default
     - tailscale
@@ -240,8 +240,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${CLIENTS_CHILD_A_TOKEN}"
-      KERNEL_JWT_SECRET:
-       "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
     ports:
     - "8302:8000"
     volumes:
@@ -279,9 +278,9 @@ services:
     container_name: bloom-portal
     environment:
       KERNEL_API: "http://kernel1:8000" # Use Tailscale network instead of localhost
-      PORTAL_TOKEN: "${BLOOM_PORTAL_TOKEN}"
+      PORTAL_TOKEN: "${PORTAL_TOKEN}"
     ports:
-    - "3001:3000"
+    - "3000:3000"
     networks:
     - tailscale
     depends_on:

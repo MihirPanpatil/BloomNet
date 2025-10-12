@@ -29,7 +29,7 @@ SERVICES = {
         {'name': 'Clients Child B', 'url': 'http://localhost:8303/health'},
     ],
     'storage': [
-        {'name': 'MinIO', 'url': 'http://localhost:9000/minio/health/ready'},
+        {'name': 'MinIO', 'url': 'http://localhost:9001/minio/health/ready'},
     ],
     'portal': [
         {'name': 'Web Portal', 'url': 'http://localhost:3000/api/health'},
