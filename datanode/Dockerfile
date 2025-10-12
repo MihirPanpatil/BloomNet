@@ -1,14 +1,22 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
+# Copy requirements file first
+COPY requirements.txt .
+
+# Install build tools and Python dependencies, then clean up
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        python3-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt-get purge -y --auto-remove \
+        build-essential \
+        python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Copy requirements file first to leverage Docker layer caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./app /app
 COPY ./app/entrypoint.sh /app/entrypoint.sh
