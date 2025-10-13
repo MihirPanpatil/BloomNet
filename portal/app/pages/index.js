@@ -77,7 +77,6 @@ export default function Home() {
                 body: file,
                 headers: {
                     'Content-Type': file.type,
-                    'Cache-Control': 'no-cache'
                 }
             });
 
