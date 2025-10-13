@@ -27,8 +27,7 @@ minio_client_internal = Minio(
     endpoint=MINIO_ENDPOINT,
     access_key=MINIO_ACCESS,
     secret_key=MINIO_SECRET,
-    secure=False,
-    region="us-east-1"
+    secure=False
 )
 
 # Client for EXTERNAL presigned URLs (for browser -> minio)
@@ -36,8 +35,7 @@ minio_client_external = Minio(
     endpoint=MINIO_EXTERNAL_ENDPOINT,
     access_key=MINIO_ACCESS,
     secret_key=MINIO_SECRET,
-    secure=False,
-    region="us-east-1"
+    secure=False
 )
 
 
@@ -249,7 +247,7 @@ async def presign_upload(body: dict):
         try:
             if not minio_client_internal.bucket_exists(bucket):
                 logger.info(f"Creating bucket: {bucket}")
-                minio_client_internal.make_bucket(bucket, location="us-east-1")
+                minio_client_internal.make_bucket(bucket)
                 policy = {
                     "Version": "2012-10-17",
                     "Statement": [
