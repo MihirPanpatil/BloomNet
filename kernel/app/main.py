@@ -26,6 +26,14 @@ minio_client = Minio(
     secure=False
 )
 
+# Minio client for generating browser-accessible presigned URLs
+minio_client_external = Minio(
+    endpoint="192.168.1.1:9000", # Use Docker host IP for browser presigned URLs
+    access_key=MINIO_ACCESS,
+    secret_key=MINIO_SECRET,
+    secure=False
+)
+
 
 # registry structure
 if os.path.exists(DATA_FILE):
@@ -258,15 +266,15 @@ async def presign_upload(body: dict):
         try:
             logger.info("Generating pre-signed URL...")
 
-            # Generate presigned URL - MinIO client handles signature calculation
-            url = minio_client.presigned_put_object(
+            # Generate presigned URL using external client (browser-accessible)
+            url = minio_client_external.presigned_put_object(
                 bucket,
                 key,
                 expires=expires
             )
 
-            # Replace internal MinIO URL with public URL for browser access
-            url = url.replace("minio:9000", "localhost:9000")
+            # Replace Docker host IP with localhost for browser access
+            url = url.replace("192.168.1.1:9000", "localhost:9000")
             logger.info(f"Generated URL: {url}")
             return {"url": url}
 
