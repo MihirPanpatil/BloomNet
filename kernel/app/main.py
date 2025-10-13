@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from minio import Minio
 from datetime import timedelta, datetime
+from urllib.parse import urlparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kernel")
@@ -19,13 +20,11 @@ MINIO_SECRET = os.environ.get('MINIO_SECRET','minioadmin')
 
 # Minio client (used for presigns)
 minio_client = Minio(
-    "minio:9000",  # Use service name instead of IP
-    access_key="minioadmin",
-    secret_key="minioadmin",
-    secure=False,  # Set to False for HTTP
-    region="us-east-1"  # Explicitly set region to match MinIO default
+    endpoint=MINIO_ENDPOINT, # Use the internal Docker address for connection
+    access_key=MINIO_ACCESS,
+    secret_key=MINIO_SECRET,
+    secure=False
 )
-MINIO_PUBLIC_URL = os.environ.get('MINIO_PUBLIC_URL', 'localhost:9000')
 
 
 # registry structure
@@ -266,8 +265,8 @@ async def presign_upload(body: dict):
                 expires=expires
             )
 
-            # Replace internal MinIO URL with public URL
-            url = url.replace("minio:9000", MINIO_PUBLIC_URL)
+            # Replace internal MinIO URL with public URL for browser access
+            url = url.replace("minio:9000", "localhost:9000")
             logger.info(f"Generated URL: {url}")
             return {"url": url}
 
