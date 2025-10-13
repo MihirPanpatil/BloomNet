@@ -74,10 +74,7 @@ export default function Home() {
             // 2. Upload using fetch with additional headers
             const uploadResponse = await fetch(url, {
                 method: 'PUT',
-                body: file,
-                headers: {
-                    'Content-Type': file.type,
-                }
+                body: file
             });
 
             if (uploadResponse.ok) {

@@ -22,7 +22,8 @@ minio_client = Minio(
     "minio:9000",  # Use service name instead of IP
     access_key="minioadmin",
     secret_key="minioadmin",
-    secure=False  # Set to False for HTTP
+    secure=False,  # Set to False for HTTP
+    region="us-east-1"  # Explicitly set region to match MinIO default
 )
 MINIO_PUBLIC_URL = os.environ.get('MINIO_PUBLIC_URL', 'localhost:9000')
 
@@ -257,15 +258,19 @@ async def presign_upload(body: dict):
         expires = timedelta(hours=1)
         try:
             logger.info("Generating pre-signed URL...")
+
+            # Generate presigned URL - MinIO client handles signature calculation
             url = minio_client.presigned_put_object(
                 bucket,
                 key,
                 expires=expires
             )
+
             # Replace internal MinIO URL with public URL
             url = url.replace("minio:9000", MINIO_PUBLIC_URL)
             logger.info(f"Generated URL: {url}")
             return {"url": url}
+
         except Exception as e:
             logger.error(f"Error generating pre-signed URL: {str(e)}")
             raise HTTPException(status_code=500, detail=f'Error generating pre-signed URL: {str(e)}')
