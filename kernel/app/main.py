@@ -17,23 +17,16 @@ PEERS = os.environ.get('PEER_KERNELS','').split(',') if os.environ.get('PEER_KER
 MINIO_ENDPOINT = os.environ.get('MINIO_ENDPOINT','minio:9000')
 MINIO_ACCESS = os.environ.get('MINIO_ACCESS','minioadmin')
 MINIO_SECRET = os.environ.get('MINIO_SECRET','minioadmin')
+# Add this new variable for the public-facing URL
+MINIO_PUBLIC_URL = os.environ.get('MINIO_PUBLIC_URL', 'localhost:9000')
 
 # Minio client (used for presigns)
 minio_client = Minio(
-    endpoint=MINIO_ENDPOINT, # Use the internal Docker address for connection
+    endpoint=MINIO_ENDPOINT,
     access_key=MINIO_ACCESS,
     secret_key=MINIO_SECRET,
     secure=False,
-    region="us-east-1"  # Add explicit region configuration
-)
-
-# Minio client for generating browser-accessible presigned URLs
-minio_client_external = Minio(
-    endpoint="192.168.1.1:9000", # Use Docker host IP for browser presigned URLs
-    access_key=MINIO_ACCESS,
-    secret_key=MINIO_SECRET,
-    secure=False,
-    region="us-east-1"  # Add explicit region configuration
+    region="us-east-1"
 )
 
 
@@ -245,7 +238,7 @@ async def presign_upload(body: dict):
         try:
             if not minio_client.bucket_exists(bucket):
                 logger.info(f"Creating bucket: {bucket}")
-                minio_client.make_bucket(bucket, location="us-east-1") # Add location parameter
+                minio_client.make_bucket(bucket, location="us-east-1")
                 policy = {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -268,15 +261,16 @@ async def presign_upload(body: dict):
         try:
             logger.info("Generating pre-signed URL...")
 
-            # Generate presigned URL using external client (browser-accessible)
-            url = minio_client_external.presigned_put_object(
+            # Generate presigned URL - MinIO now provides the correct public URL automatically
+            url = minio_client.presigned_put_object(
                 bucket,
                 key,
                 expires=expires
             )
 
-            # Replace Docker host IP with localhost for browser access
-            url = url.replace("192.168.1.1:9000", "localhost:9000")
+            # Replace internal MinIO URL with public URL for browser access
+            url = url.replace("minio:9000", "localhost:9000")
+
             logger.info(f"Generated URL: {url}")
             return {"url": url}
 

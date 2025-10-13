@@ -29,6 +29,7 @@ services:
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      MINIO_PUBLIC_URL: "localhost:9000"
     ports:
     - "8001:8000"
     volumes:
@@ -38,6 +39,11 @@ services:
     - tailscale
     depends_on:
     - tailscale
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kernel2:
     build: ./kernel
@@ -49,6 +55,7 @@ services:
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      MINIO_PUBLIC_URL: "localhost:9000"
     ports:
     - "8002:8000"
     volumes:
@@ -58,6 +65,11 @@ services:
     - tailscale
     depends_on:
     - tailscale
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kernel3:
     build: ./kernel
@@ -69,6 +81,7 @@ services:
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
+      MINIO_PUBLIC_URL: "localhost:9000"
     ports:
     - "8003:8000"
     volumes:
@@ -78,6 +91,11 @@ services:
     - tailscale
     depends_on:
     - tailscale
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # DataMart: PHOTOS (parent + childA + childB)
   photos-parent:
@@ -93,13 +111,14 @@ services:
       NODE_TOKEN: "${PHOTOS_PARENT_TOKEN}"
       KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
     ports:
-    - "8101:8000"
+      - "8101:8000"
     volumes:
-    - photos_parent_data:/data
+      - photos_parent_data:/data
     networks:
-    - tailscale
+      - tailscale
     depends_on:
-    - tailscale
+      kernel1:
+        condition: service_healthy
 
   photos-child-a:
     build: ./datanode
