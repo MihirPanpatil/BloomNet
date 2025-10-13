@@ -29,16 +29,16 @@ services:
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
-      MINIO_PUBLIC_URL: "localhost:9000"
+      MINIO_EXTERNAL_ENDPOINT: "localhost:9000"
     ports:
-    - "8001:8000"
+      - "8001:8000"
     volumes:
-    - kernel1_data:/app/data
+      - kernel1_data:/app/data
     networks:
-    - default
-    - tailscale
+      - default
+      - tailscale
     depends_on:
-    - tailscale
+      - tailscale
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -55,16 +55,16 @@ services:
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
-      MINIO_PUBLIC_URL: "localhost:9000"
+      MINIO_EXTERNAL_ENDPOINT: "localhost:9000"
     ports:
-    - "8002:8000"
+      - "8002:8000"
     volumes:
-    - kernel2_data:/app/data
+      - kernel2_data:/app/data
     networks:
-    - default
-    - tailscale
+      - default
+      - tailscale
     depends_on:
-    - tailscale
+      - tailscale
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -81,16 +81,16 @@ services:
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
-      MINIO_PUBLIC_URL: "localhost:9000"
+      MINIO_EXTERNAL_ENDPOINT: "localhost:9000"
     ports:
-    - "8003:8000"
+      - "8003:8000"
     volumes:
-    - kernel3_data:/app/data
+      - kernel3_data:/app/data
     networks:
-    - default
-    - tailscale
+      - default
+      - tailscale
     depends_on:
-    - tailscale
+      - tailscale
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -139,7 +139,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
   photos-child-b:
     build: ./datanode
@@ -160,7 +163,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
 
 # DataMart: RESEARCH
@@ -183,7 +189,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
   research-child-a:
     build: ./datanode
@@ -204,7 +213,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
   research-child-b:
     build: ./datanode
@@ -225,7 +237,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
 # DataMart: CLIENTS
   clients-parent:
@@ -247,7 +262,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
   clients-child-a:
     build: ./datanode
@@ -268,7 +286,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
   clients-child-b:
     build: ./datanode
@@ -289,7 +310,10 @@ services:
     networks:
     - tailscale
     depends_on:
-    - tailscale
+      tailscale:
+        condition: service_started
+      kernel1:
+        condition: service_healthy
 
 
 # Next.js Portal (talks to kernel for presign and notify)

@@ -18,7 +18,7 @@ MINIO_ENDPOINT = os.environ.get('MINIO_ENDPOINT','minio:9000')
 MINIO_ACCESS = os.environ.get('MINIO_ACCESS','minioadmin')
 MINIO_SECRET = os.environ.get('MINIO_SECRET','minioadmin')
 # Add this new variable for the public-facing URL
-MINIO_PUBLIC_URL = os.environ.get('MINIO_PUBLIC_URL', 'localhost:9000')
+MINIO_EXTERNAL_ENDPOINT = os.environ.get('MINIO_EXTERNAL_ENDPOINT', 'localhost:9000')
 
 # Minio client (used for presigns)
 minio_client = Minio(
@@ -268,8 +268,8 @@ async def presign_upload(body: dict):
                 expires=expires
             )
 
-            # Replace internal MinIO URL with public URL for browser access
-            url = url.replace("minio:9000", "localhost:9000")
+            # Replace internal MinIO URL with external URL for browser access
+            url = url.replace("minio:9000", MINIO_EXTERNAL_ENDPOINT)
 
             logger.info(f"Generated URL: {url}")
             return {"url": url}
