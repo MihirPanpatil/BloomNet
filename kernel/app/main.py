@@ -247,7 +247,7 @@ async def presign_upload(body: dict):
         try:
             if not minio_client_internal.bucket_exists(bucket):
                 logger.info(f"Creating bucket: {bucket}")
-                minio_client_internal.make_bucket(bucket)
+                minio_client_internal.make_bucket(bucket, location="us-east-1")
                 policy = {
                     "Version": "2012-10-17",
                     "Statement": [
