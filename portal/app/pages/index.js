@@ -9,7 +9,7 @@ export default function Home() {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [systemStatus, setSystemStatus] = useState({});
     const [uploadHistory, setUploadHistory] = useState([]);
-    const [uploadStatusMessage, setUploadStatusMessage] = useState(''); // For user feedback
+    const [uploadStatus, setUploadStatus] = useState('') // New state for status messages
 
     useEffect(() => {
         loadRegistry();
@@ -30,13 +30,13 @@ export default function Home() {
     async function loadSystemStatus() {
         try{
             const services = [
-                {name: 'Kernel 1', url: 'http://kernel1:8000/health'},
-                {name: 'Kernel 2', url: 'http://kernel2:8000/health'},
-                {name: 'Kernel 3', url: 'http://kernel3:8000/health'},
-                {name: 'Photos Parent', url: 'http://photos-parent:8000/health'},
-                {name: 'Research Parent', url: 'http://research-parent:8000/health'},
-                {name: 'Clients Parent', url: 'http://clients-parent:8000/health'},
-                {name: 'MinIO', url: 'http://minio:9000/minio/health/ready', isMinIO: true}
+                {name: 'Kernel 1', url: 'http://localhost:8001/health'},
+                {name: 'Kernel 2', url: 'http://localhost:8002/health'},
+                {name: 'Kernel 3', url: 'http://localhost:8003/health'},
+                {name: 'Photos Parent', url: 'http://localhost:8101/health'},
+                {name: 'Research Parent', url: 'http://localhost:8201/health'},
+                {name: 'Clients Parent', url: 'http://localhost:8301/health'},
+                {name: 'MinIO', url: 'http://localhost:9000/minio/health/ready', isMinIO: true}
             ];
             const status = {};
             for(const service of services) {
@@ -54,65 +54,44 @@ export default function Home() {
 
     async function upload(e) {
         e.preventDefault();
-        
-        // **THE FIX**: Use the 'file' from the component's state, not from the event 'e'.
-        if (!file) {
-            setUploadStatusMessage('Please select a file first.');
-            return;
-        }
-
-        setUploading(true);
-        setUploadProgress(0);
-        setUploadStatusMessage('Getting upload URL...');
+        const fileInput = document.getElementById('file-input');
+        const file = fileInput.files[0];
+        if (!file) return;
 
         try {
-            // 1. Get pre-signed URL from the backend API
+            setUploading(true)
+            setUploadStatus('Getting upload URL...');
+
+            // 1. Get pre-signed URL for upload
             const response = await axios.post('/api/presign', {
                 mart: mart,
                 key: file.name
             });
+
             const { url } = response.data;
-            setUploadStatusMessage('Uploading...');
+            setUploadStatus('Uploading...');
 
-            // 2. Upload the file directly to MinIO using XMLHttpRequest for progress
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', url, true);
-            
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percentComplete = (event.loaded / event.total) * 100;
-                    setUploadProgress(Math.round(percentComplete));
+            // 2. Upload using fetch with additional headers
+            const uploadResponse = await fetch(url, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type,
+                    'Cache-Control': 'no-cache'
                 }
-            };
+            });
 
-            xhr.onload = async () => {
-                if (xhr.status === 200) {
-                    setUploadStatusMessage('Upload successful! Notifying kernel...');
-                    // 3. Notify the kernel that the upload is complete
-                    await axios.post('/api/notify', {
-                        mart: mart,
-                        key: file.name,
-                    });
-                    setUploadStatusMessage('Done!');
-                    setUploadHistory(prev => [{ fileName: file.name, mart: mart, timestamp: new Date().toISOString(), status: 'success' }, ...prev]);
-                } else {
-                    throw new Error(`Upload to storage failed: ${xhr.statusText}`);
-                }
-                setUploading(false);
-                setFile(null); // Clear the file input after successful upload
-            };
-
-            xhr.onerror = () => {
-                throw new Error('A network error occurred during the upload.');
-            };
-            
-            xhr.send(file);
-
+            if (uploadResponse.ok) {
+                setUploadStatus('Upload successful!');
+            } else {
+                const errorText = await uploadResponse.text();
+                throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
+            }
         } catch (error) {
-            console.error('Upload process failed:', error);
-            setUploadStatusMessage(`Error: ${error.message}`);
-            setUploading(false);
-            setUploadHistory(prev => [{ fileName: file.name, mart: mart, timestamp: new Date().toISOString(), status: 'failed' }, ...prev]);
+            console.error('Upload failed:', error);
+            setUploadStatus(`Upload failed: ${error.message}. Check the browser console for more details.`);
+        } finally {
+            setUploading(false)
         }
     }
 
@@ -325,7 +304,7 @@ export default function Home() {
                                 {uploading && (
                                     <div>
                                         <div style={{marginBottom: '0.5rem', fontSize: '0.9rem', color: '#374151'}}>
-                                            {uploadStatusMessage}
+                                            Upload Progress: {uploadProgress}%
                                         </div>
                                         <div style={{
                                             width: '100%',
@@ -341,6 +320,18 @@ export default function Home() {
                                                 transition: 'width 0.3s ease'
                                             }} />
                                         </div>
+                                    </div>
+                                )}
+
+                                {uploadStatus && (
+                                    <div style={{
+                                        padding: '0.8rem',
+                                        borderRadius: '0.5rem',
+                                        background: uploadStatus.startsWith('Upload successful') ? '#f0fdf4' : '#fef2f2',
+                                        color: uploadStatus.startsWith('Upload successful') ? '#14532d' : '#7f1d1d',
+                                        textAlign: 'center'
+                                    }}>
+                                        {uploadStatus}
                                     </div>
                                 )}
 

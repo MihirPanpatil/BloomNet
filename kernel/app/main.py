@@ -224,10 +224,10 @@ async def presign_upload(body: dict):
         mart = body.get('mart')
         key = body.get('key')
         logger.info(f"Received presign request for mart={mart}, key={key}")
-        
+
         if not mart or not key:
             raise HTTPException(status_code=400, detail='mart and key required')
-            
+
         bucket = f"mart-{mart}"
         logger.info(f"Using bucket: {bucket}")
 
@@ -236,6 +236,19 @@ async def presign_upload(body: dict):
             if not minio_client.bucket_exists(bucket):
                 logger.info(f"Creating bucket: {bucket}")
                 minio_client.make_bucket(bucket)
+                policy = {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {"AWS": ["*"]},
+                            "Action": ["s3:GetObject", "s3:PutObject"],
+                            "Resource": [f"arn:aws:s3:::{bucket}/*"]
+                        }
+                    ]
+                }
+                minio_client.set_bucket_policy(bucket, json.dumps(policy))
+                logger.info(f"Applied public read/write policy to bucket: {bucket}")
         except Exception as e:
             logger.error(f"Error with bucket {bucket}: {str(e)}")
             raise HTTPException(status_code=500, detail=f'Error with bucket: {str(e)}')
@@ -256,7 +269,7 @@ async def presign_upload(body: dict):
         except Exception as e:
             logger.error(f"Error generating pre-signed URL: {str(e)}")
             raise HTTPException(status_code=500, detail=f'Error generating pre-signed URL: {str(e)}')
-            
+
     except HTTPException:
         raise
     except Exception as e:
