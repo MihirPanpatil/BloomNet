@@ -23,7 +23,8 @@ minio_client = Minio(
     endpoint=MINIO_ENDPOINT, # Use the internal Docker address for connection
     access_key=MINIO_ACCESS,
     secret_key=MINIO_SECRET,
-    secure=False
+    secure=False,
+    region="us-east-1"  # Add explicit region configuration
 )
 
 # Minio client for generating browser-accessible presigned URLs
@@ -31,7 +32,8 @@ minio_client_external = Minio(
     endpoint="192.168.1.1:9000", # Use Docker host IP for browser presigned URLs
     access_key=MINIO_ACCESS,
     secret_key=MINIO_SECRET,
-    secure=False
+    secure=False,
+    region="us-east-1"  # Add explicit region configuration
 )
 
 
@@ -243,7 +245,7 @@ async def presign_upload(body: dict):
         try:
             if not minio_client.bucket_exists(bucket):
                 logger.info(f"Creating bucket: {bucket}")
-                minio_client.make_bucket(bucket)
+                minio_client.make_bucket(bucket, location="us-east-1") # Add location parameter
                 policy = {
                     "Version": "2012-10-17",
                     "Statement": [
