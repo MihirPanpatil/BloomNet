@@ -20,9 +20,20 @@ MINIO_SECRET = os.environ.get('MINIO_SECRET','minioadmin')
 # Add this new variable for the public-facing URL
 MINIO_EXTERNAL_ENDPOINT = os.environ.get('MINIO_EXTERNAL_ENDPOINT', 'localhost:9000')
 
-# Minio client (used for presigns)
-minio_client = Minio(
+# --- MINIO CLIENTS ---
+
+# Client for INTERNAL communication (kernel -> minio)
+minio_client_internal = Minio(
     endpoint=MINIO_ENDPOINT,
+    access_key=MINIO_ACCESS,
+    secret_key=MINIO_SECRET,
+    secure=False,
+    region="us-east-1"
+)
+
+# Client for EXTERNAL presigned URLs (for browser -> minio)
+minio_client_external = Minio(
+    endpoint=MINIO_EXTERNAL_ENDPOINT,
     access_key=MINIO_ACCESS,
     secret_key=MINIO_SECRET,
     secure=False,
@@ -234,11 +245,11 @@ async def presign_upload(body: dict):
         bucket = f"mart-{mart}"
         logger.info(f"Using bucket: {bucket}")
 
-        # Ensure bucket exists
+        # Ensure bucket exists using the INTERNAL client
         try:
-            if not minio_client.bucket_exists(bucket):
+            if not minio_client_internal.bucket_exists(bucket):
                 logger.info(f"Creating bucket: {bucket}")
-                minio_client.make_bucket(bucket, location="us-east-1")
+                minio_client_internal.make_bucket(bucket, location="us-east-1")
                 policy = {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -250,27 +261,21 @@ async def presign_upload(body: dict):
                         }
                     ]
                 }
-                minio_client.set_bucket_policy(bucket, json.dumps(policy))
+                minio_client_internal.set_bucket_policy(bucket, json.dumps(policy))
                 logger.info(f"Applied public read/write policy to bucket: {bucket}")
         except Exception as e:
             logger.error(f"Error with bucket {bucket}: {str(e)}")
             raise HTTPException(status_code=500, detail=f'Error with bucket: {str(e)}')
 
-        # presigned PUT (1 hour)
+        # Generate the presigned URL using the EXTERNAL client
         expires = timedelta(hours=1)
         try:
-            logger.info("Generating pre-signed URL...")
-
-            # Generate presigned URL - MinIO now provides the correct public URL automatically
-            url = minio_client.presigned_put_object(
+            logger.info(f"Generating pre-signed URL with external endpoint: {MINIO_EXTERNAL_ENDPOINT}...")
+            url = minio_client_external.presigned_put_object(
                 bucket,
                 key,
                 expires=expires
             )
-
-            # Replace internal MinIO URL with external URL for browser access
-            url = url.replace("minio:9000", MINIO_EXTERNAL_ENDPOINT)
-
             logger.info(f"Generated URL: {url}")
             return {"url": url}
 
