@@ -6,6 +6,14 @@ from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 
 
+def _required(name: str) -> str:
+    """Read a required secret from the environment. There are no built-in defaults."""
+    value = os.environ.get(name, "")
+    if not value:
+        raise RuntimeError(f"{name} is not set. Copy .env.example to .env and fill it in.")
+    return value
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("datanode")
@@ -14,11 +22,11 @@ NODE_ID = os.environ.get('NODE_ID','dnode')
 PARENT_KERNEL = os.environ.get('PARENT_KERNEL','http://localhost:8001')
 MART_ID = os.environ.get('MART_ID','default')
 NODE_TOKEN = os.environ.get('NODE_TOKEN','') # token issued by kernel for this node
-KERNEL_JWT_SECRET = os.environ.get('KERNEL_JWT_SECRET','devsecret')
+KERNEL_JWT_SECRET = _required('KERNEL_JWT_SECRET')
 
 MINIO_ENDPOINT = os.environ.get('MINIO_ENDPOINT','minio:9000')
-MINIO_ACCESS = os.environ.get('MINIO_ACCESS','minioadmin')
-MINIO_SECRET = os.environ.get('MINIO_SECRET','minioadmin')
+MINIO_ACCESS = _required('MINIO_ACCESS')
+MINIO_SECRET = _required('MINIO_SECRET')
 
 DATA_DIR = '/data'
 os.makedirs(DATA_DIR, exist_ok=True)

@@ -6,17 +6,25 @@ from minio import Minio
 from datetime import timedelta, datetime
 from urllib.parse import urlparse
 
+
+def _required(name: str) -> str:
+    """Read a required secret from the environment. There are no built-in defaults."""
+    value = os.environ.get(name, "")
+    if not value:
+        raise RuntimeError(f"{name} is not set. Copy .env.example to .env and fill it in.")
+    return value
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kernel")
 
 # config from env
 DATA_FILE = '/app/data/registry.json'
 os.makedirs('/app/data', exist_ok=True)
-SECRET = os.environ.get('KERNEL_JWT_SECRET', 'devsecret')
+SECRET = _required('KERNEL_JWT_SECRET')
 PEERS = os.environ.get('PEER_KERNELS','').split(',') if os.environ.get('PEER_KERNELS') else []
 MINIO_ENDPOINT = os.environ.get('MINIO_ENDPOINT','minio:9000')
-MINIO_ACCESS = os.environ.get('MINIO_ACCESS','minioadmin')
-MINIO_SECRET = os.environ.get('MINIO_SECRET','minioadmin')
+MINIO_ACCESS = _required('MINIO_ACCESS')
+MINIO_SECRET = _required('MINIO_SECRET')
 # Add this new variable for the public-facing URL
 MINIO_EXTERNAL_ENDPOINT = os.environ.get('MINIO_EXTERNAL_ENDPOINT', 'localhost:9000')
 

@@ -38,11 +38,11 @@ cd bloom-testbed
 nano .env
 ```
 
-Required environment variables:
+Required environment variables. There are no default credentials: the stack will not start until these are set.
 ```env
-KERNEL_JWT_SECRET=your-secret-key-here
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin
+KERNEL_JWT_SECRET=      # openssl rand -hex 32
+MINIO_ROOT_USER=        # your choice
+MINIO_ROOT_PASSWORD=    # openssl rand -base64 24
 # Optional: TAILSCALE_AUTHKEY=tskey-... (for secure networking)
 ```
 
@@ -74,7 +74,7 @@ mc admin policy attach bloom-net bucket-policy --user=bloom-user
 The provided configuration files (`cors.json` and `bucket-policy.json`) are templates that can be customized for your specific requirements.
 ### 6. Access the Portal
 - **Portal**: http://localhost:3000
-- **MinIO Console**: http://localhost:9001 (admin/minioadmin)
+- **MinIO Console**: http://localhost:9001 (log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env`)
 - **API Endpoints**: http://localhost:8001 (Kernel 1)
 
 ## Quick Reference
@@ -102,7 +102,7 @@ docker compose restart
 
 ## Access URLs
 - **Portal**: http://localhost:3000
-- **MinIO Console**: http://localhost:9001 (admin/minioadmin)
+- **MinIO Console**: http://localhost:9001 (log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env`)
 - **API Endpoints**: http://localhost:8001 (Kernel 1)
 
 ## Development
@@ -376,8 +376,8 @@ docker compose exec kernel1 python3 -c "print('test')"
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `KERNEL_JWT_SECRET` | JWT signing secret | Required |
-| `MINIO_ROOT_USER` | MinIO admin username | minioadmin |
-| `MINIO_ROOT_PASSWORD` | MinIO admin password | minioadmin |
+| `MINIO_ROOT_USER` | MinIO admin username | Required |
+| `MINIO_ROOT_PASSWORD` | MinIO admin password | Required |
 | `TAILSCALE_AUTHKEY` | Tailscale auth key | Optional |
 
 ### Docker Compose Scaling

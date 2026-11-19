@@ -6,8 +6,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-minioadmin}"
-      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-minioadmin}"
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}"
       MINIO_SERVER_URL: "http://localhost:9000"
     volumes:
     - ./minio/data:/data
@@ -25,7 +25,7 @@ services:
     environment:
       NODE_ID: kernel1
       PEER_KERNELS: "kernel2:8000,kernel3:8000"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
@@ -51,7 +51,7 @@ services:
     environment:
       NODE_ID: kernel2
       PEER_KERNELS: "kernel1:8000,kernel3:8000"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
@@ -77,7 +77,7 @@ services:
     environment:
       NODE_ID: kernel3
       PEER_KERNELS: "kernel1:8000,kernel2:8000"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
@@ -109,7 +109,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${PHOTOS_PARENT_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
       - "8101:8000"
     volumes:
@@ -131,7 +131,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${PHOTOS_CHILD_A_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8102:8000"
     volumes:
@@ -155,7 +155,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${PHOTOS_CHILD_B_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8103:8000"
     volumes:
@@ -181,7 +181,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${RESEARCH_PARENT_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8201:8000"
     volumes:
@@ -205,7 +205,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${RESEARCH_CHILD_A_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8202:8000"
     volumes:
@@ -229,7 +229,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${RESEARCH_CHILD_B_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8203:8000"
     volumes:
@@ -254,7 +254,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${CLIENTS_PARENT_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8301:8000"
     volumes:
@@ -278,7 +278,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${CLIENTS_CHILD_A_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8302:8000"
     volumes:
@@ -302,7 +302,7 @@ services:
       MINIO_ACCESS: "${MINIO_ROOT_USER}"
       MINIO_SECRET: "${MINIO_ROOT_PASSWORD}"
       NODE_TOKEN: "${CLIENTS_CHILD_B_TOKEN}"
-      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET}"
+      KERNEL_JWT_SECRET: "${KERNEL_JWT_SECRET:?Set KERNEL_JWT_SECRET in .env}"
     ports:
     - "8303:8000"
     volumes:
